@@ -4,7 +4,7 @@ import {
   IListObject,
   ListActionProps,
 } from "../common/interfaces";
-import { ADD_LIST } from "../types";
+import { ADD_LIST, FETCH_LISTS } from "../types";
 
 const addList = (lists: IList[], newList: IList) => [...lists, newList];
 
@@ -18,7 +18,11 @@ const listReducer = (
         ...state,
         lists: addList(state.lists, action.payload),
       };
-
+    case FETCH_LISTS:
+      return {
+        ...state,
+        lists: action.payload,
+      };
     default:
       return state;
   }

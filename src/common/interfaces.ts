@@ -1,5 +1,6 @@
 import { getCardObject } from "../utils/fetchUtil";
 export interface ICard {
+  taskId: number;
   taskTitle: string;
   taskDesc: string;
   taskTag: string;
@@ -9,6 +10,10 @@ export interface ICard {
 export interface Store {
   cards: ICard[];
   newCard: string;
+}
+
+export interface cardsData {
+  cards: ICard[];
 }
 export interface IList {
   listTitle: string;
@@ -23,7 +28,15 @@ export interface ActionProps {
   type: string;
   payload: ICard;
 }
+export interface FetchCardsProps {
+  type: string;
+  payload: ICard[];
+}
 
+export interface FetchListsProps {
+  type: string;
+  payload: IList[];
+}
 export interface ListActionProps {
   type: string;
   payload: {
@@ -39,3 +52,7 @@ export interface cardApiObject<T> {
 export interface IList {
   listTitle: string;
 }
+
+export const ItemType = {
+  CARD: "card",
+};

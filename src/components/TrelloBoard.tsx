@@ -17,30 +17,62 @@ import { ActionProps, ICard, IList } from "../common/interfaces";
 import CheckableTag from "antd/lib/tag/CheckableTag";
 import { connect } from "react-redux";
 import { Dispatch } from "redux";
-import { addCard } from "../actions/cardActions";
-import { addList } from "../actions/listActions";
+import { addCard, fetchCardItems } from "../actions/cardActions";
+import { addList, fetchListItems } from "../actions/listActions";
 import TrelloList from "./TrelloList";
+const { TextArea } = Input;
+const { Option } = Select;
 
 interface IProps {
   addList: (listTitle: string) => void;
   listsData: [];
+  addCard: (
+    taskId: number,
+    taskTitle: string,
+    taskDesc: string,
+    taskTag: string,
+    taskDueDate: string,
+    taskAssignee: string
+  ) => void;
+  fetchListItems: () => void;
 }
-const TrelloBoard: React.FC<IProps> = ({ listsData, addList }) => {
+const TrelloBoard: React.FC<IProps> = ({
+  addCard,
+  listsData,
+  addList,
+  fetchListItems,
+}) => {
   const [listModal, setListModal] = useState(false);
   const [cardModal, setCardModal] = useState(false);
   const [lists, setLists] = useState<IList[]>([]);
 
   const [state, setState] = useState<ICard>({
+    taskId: 0,
     taskTitle: "",
     taskDesc: "",
     taskTag: "",
-    taskDueDate: "16-10-2022",
+    taskDueDate: "",
     taskAssignee: "",
   });
   const [listState, setListState] = useState<IList>({
     listTitle: "",
   });
+  const tagsData = [
+    {
+      title: "Feature",
+      color: "green",
+    },
+    {
+      title: "Task",
+      color: "blue",
+    },
+    {
+      title: "Bug",
+      color: "red",
+    },
+  ];
   const toggleListModal = () => {
+    setListState({ listTitle: "" });
     setListModal(!listModal);
   };
   const toggleCardModal = () => {
@@ -51,14 +83,38 @@ const TrelloBoard: React.FC<IProps> = ({ listsData, addList }) => {
     addList(listState.listTitle);
     toggleListModal();
   };
-
+  const handleCardChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
+    setState({ ...state, [e.target.name]: e.target.value });
+  };
+  const handleDateChange = (date: any, dateString: string) => {
+    setState({ ...state, taskDueDate: dateString });
+  };
+  const handleSubmit = () => {
+    addCard(
+      state.taskId,
+      state.taskTitle,
+      state.taskDesc,
+      state.taskTag,
+      state.taskDueDate,
+      state.taskAssignee
+    );
+    toggleCardModal();
+  };
   useEffect(() => {
-    console.log(listsData);
-
-    setLists(listsData);
+    fetchListItems();
+  }, []);
+  useEffect(() => {
+    if (listsData.length) setLists(listsData);
   }, [listsData]);
 
-  const style = { background: "#0092ff", padding: "8px 0" };
+  const style = {
+    background: "rgb(193 195 197) ",
+    padding: "8px 0",
+  };
 
   return (
     <>
@@ -87,10 +143,18 @@ const TrelloBoard: React.FC<IProps> = ({ listsData, addList }) => {
         ></PageHeader>
       </div>
 
-      <Row justify="space-between" style={{ width: "100%" }}>
-        {lists.map((list) => {
+      <Row gutter={20} style={{ margin: 0 }}>
+        {lists.map((list, index) => {
           return (
-            <Col span={4} className="gutter-row">
+            <Col
+              key={`${index}${list}`}
+              xs={{ span: 8 }}
+              sm={{ span: 8 }}
+              md={{ span: 6 }}
+              lg={{ span: 6 }}
+              xl={{ span: 6 }}
+              className="gutter-row"
+            >
               <div style={style}>
                 <TrelloList list={list} />
               </div>
@@ -98,6 +162,63 @@ const TrelloBoard: React.FC<IProps> = ({ listsData, addList }) => {
           );
         })}
       </Row>
+      {/* modal to get the details of card start here */}
+      <Modal
+        title="Card"
+        visible={cardModal}
+        onOk={handleSubmit}
+        onCancel={toggleCardModal}
+      >
+        <Input
+          size="large"
+          placeholder="Task Title"
+          name="taskTitle"
+          onChange={handleCardChange}
+        />
+        <br />
+        <br />
+        <TextArea
+          rows={4}
+          placeholder="Task Description"
+          name="taskDesc"
+          onChange={handleCardChange}
+        />
+        <br />
+        <br />
+        <DatePicker
+          style={{ width: "100%" }}
+          name="taskDueDate"
+          onChange={handleDateChange}
+        />
+        <br />
+        <br />
+        <Select
+          defaultValue="select"
+          style={{ width: "100%" }}
+          onChange={(event) => setState({ ...state, taskAssignee: event })}
+        >
+          <Option value="select" disabled selected>
+            Select One
+          </Option>
+          <Option value="Fouzia">Fouzia</Option>
+          <Option value="Noor">Noor</Option>
+          <Option value="Zehra">Zehra</Option>
+        </Select>
+        <br />
+        <br />
+        <span style={{ marginRight: 8 }}>Task Type:</span>
+        {tagsData.map((tag) => (
+          <Tag
+            style={styles.tag}
+            color={tag.color}
+            key={tag.title}
+            onClick={() => setState({ ...state, taskTag: tag.title })}
+          >
+            {tag.title}
+          </Tag>
+        ))}
+      </Modal>
+      {/* modal to get the details of card ends here */}
 
       {/* modal to get the details of list starts here */}
 
@@ -124,8 +245,6 @@ const TrelloBoard: React.FC<IProps> = ({ listsData, addList }) => {
   );
 };
 const mapStateToProps = (state: any) => {
-  console.log("listReducer has data", state.listReducer);
-
   return {
     cardsData: state.cardReducer.cards,
     listsData: state.listReducer.lists,
@@ -134,6 +253,23 @@ const mapStateToProps = (state: any) => {
 const mapDispatchToProps = (dispatch: any) => {
   return {
     addList: (listTitle: string) => dispatch(addList(listTitle)),
+    addCard: (
+      taskId: number,
+      taskTitle: string,
+      taskDesc: string,
+      taskTag: string,
+      taskDueDate: string,
+      taskAssignee: string
+    ) =>
+      dispatch(
+        addCard(taskId, taskTitle, taskDesc, taskTag, taskDueDate, taskAssignee)
+      ),
+    fetchListItems: () => dispatch(fetchListItems()),
   };
+};
+const styles = {
+  tag: {
+    cursor: "pointer",
+  },
 };
 export default connect(mapStateToProps, mapDispatchToProps)(TrelloBoard);
