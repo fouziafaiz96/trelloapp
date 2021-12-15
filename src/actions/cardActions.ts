@@ -1,4 +1,3 @@
-import { parse } from "path";
 import { Dispatch } from "redux";
 import { ActionProps, FetchCardsProps, ICard } from "../common/interfaces";
 import { ADD_CARD, DELETE_CARD, FETCH_CARDS } from "../types";
@@ -37,38 +36,41 @@ export const addCard =
     });
   };
 
-export const updateCard = (card: any) => (dispatch: Dispatch<ActionProps>) => {
-  let changedObj: ICard = getCardbyId(card.taskId);
-  dispatch({
-    type: DELETE_CARD,
-    payload: {
-      taskId: card.taskId,
-      taskTitle: card.taskTitle,
-      taskDesc: card.taskDesc,
-      taskTag: card.taskTag,
-      taskDueDate: card.taskDueDate,
-      taskAssignee: card.taskAssignee,
-    },
-  });
+export const updateCard =
+  (card: any, newStatus: string) => (dispatch: Dispatch<ActionProps>) => {
+    let changedObj: ICard = getCardbyId(card.taskId);
+    console.log(card, card.taskId, newStatus);
 
-  sessionStorage.removeItem("cardObj" + card.taskId.toString());
-  let taskId = changedObj.taskId;
+    dispatch({
+      type: DELETE_CARD,
+      payload: {
+        taskId: card.taskId,
+        taskTitle: card.taskTitle,
+        taskDesc: card.taskDesc,
+        taskTag: card.taskTag,
+        taskDueDate: card.taskDueDate,
+        taskAssignee: card.taskAssignee,
+      },
+    });
 
-  let newcardObj = {
-    taskId: changedObj.taskId,
-    taskTitle: changedObj.taskTitle,
-    taskDesc: changedObj.taskDesc,
-    taskTag: "bug",
-    taskDueDate: changedObj.taskDueDate,
-    taskAssignee: changedObj.taskAssignee,
+    sessionStorage.removeItem("cardObj" + card.taskId.toString());
+    let taskId = changedObj.taskId;
+
+    let newcardObj = {
+      taskId: changedObj.taskId,
+      taskTitle: changedObj.taskTitle,
+      taskDesc: changedObj.taskDesc,
+      taskTag: newStatus,
+      taskDueDate: changedObj.taskDueDate,
+      taskAssignee: changedObj.taskAssignee,
+    };
+
+    sessionStorage.setItem("cardObj" + taskId, JSON.stringify(newcardObj));
+    dispatch({
+      type: ADD_CARD,
+      payload: newcardObj,
+    });
   };
-
-  sessionStorage.setItem("cardObj" + taskId, JSON.stringify(newcardObj));
-  dispatch({
-    type: ADD_CARD,
-    payload: newcardObj,
-  });
-};
 
 function getCardbyId(id: number) {
   for (var key in sessionStorage) {
@@ -76,7 +78,7 @@ function getCardbyId(id: number) {
       let allCards = sessionStorage.getItem(key);
       if (allCards) {
         let parsedObj = JSON.parse(allCards);
-        if (parsedObj.taskId == id) return parsedObj;
+        if (parsedObj.taskId === id) return parsedObj;
       }
     }
   }

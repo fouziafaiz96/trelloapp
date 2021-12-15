@@ -1,5 +1,5 @@
 import { Dispatch } from "redux";
-import { FetchListsProps, IList, ListActionProps } from "../common/interfaces";
+import { FetchListsProps, ListActionProps } from "../common/interfaces";
 import { ADD_LIST, FETCH_LISTS } from "../types";
 
 export const addList =
@@ -15,7 +15,6 @@ export const addList =
   };
 
 export const fetchListItems = () => (dispatch: Dispatch<FetchListsProps>) => {
-  let parsedObj;
   let listItems = [];
   for (var key in sessionStorage) {
     if (key.toString().includes("listTitle")) {

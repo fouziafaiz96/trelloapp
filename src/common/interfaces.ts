@@ -1,4 +1,3 @@
-import { getCardObject } from "../utils/fetchUtil";
 export interface ICard {
   taskId: number;
   taskTitle: string;

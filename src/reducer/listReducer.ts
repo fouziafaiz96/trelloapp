@@ -1,9 +1,4 @@
-import {
-  ActionProps,
-  IList,
-  IListObject,
-  ListActionProps,
-} from "../common/interfaces";
+import { IList, IListObject, ListActionProps } from "../common/interfaces";
 import { ADD_LIST, FETCH_LISTS } from "../types";
 
 const addList = (lists: IList[], newList: IList) => [...lists, newList];

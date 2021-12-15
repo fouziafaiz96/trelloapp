@@ -1,51 +1,39 @@
 import { TrelloCard } from "./TrelloCard";
-import {
-  PageHeader,
-  Button,
-  Space,
-  Modal,
-  Input,
-  DatePicker,
-  Select,
-  Tag,
-  Row,
-} from "antd";
-import { PlusOutlined } from "@ant-design/icons";
+import { Row } from "antd";
 import { useEffect, useState } from "react";
-import { ActionProps, ICard, IList, ItemType } from "../common/interfaces";
-import CheckableTag from "antd/lib/tag/CheckableTag";
+import { ICard, IList, ItemType } from "../common/interfaces";
 import { connect } from "react-redux";
-import { Dispatch } from "redux";
-import { addCard, fetchCardItems, updateCard } from "../actions/cardActions";
-import { addList, fetchListItems } from "../actions/listActions";
+import { fetchCardItems, updateCard } from "../actions/cardActions";
+import { addList } from "../actions/listActions";
 import { useDrop } from "react-dnd";
 
 interface IProps {
   cardsData: [];
   listsData: [];
   list: IList;
-  updateCard: (card: ICard) => void;
+  updateCard: (card: ICard, newStatus: string) => void;
   fetchCardItems: () => void;
+  onDrop: (item: ICard, monitor: any, status: string) => void;
 }
 const TrelloList: React.FC<IProps> = ({
   cardsData,
   list,
   updateCard,
   fetchCardItems,
+  onDrop,
 }) => {
-  const [{ isOver }, drop] = useDrop(() => ({
+  const [, drop] = useDrop({
     accept: ItemType.CARD,
-    drop: (item: ICard) => changeCardItem(item),
+    canDrop: (item: ICard, monitor) => {
+      return true;
+    },
+    drop: (item, monitor) => {
+      onDrop(item, monitor, list.listTitle);
+    },
     collect: (monitor) => ({
-      isOver: !!monitor.isOver(),
+      isOver: monitor.isOver(),
     }),
-  }));
-
-  const changeCardItem = (item: ICard) => {
-    updateCard(item);
-  };
-  const [listModal, setListModal] = useState(false);
-  const [cardModal, setCardModal] = useState(false);
+  });
   const [cards, setCards] = useState<ICard[]>([]);
 
   useEffect(() => {
@@ -61,13 +49,18 @@ const TrelloList: React.FC<IProps> = ({
         <h4 style={styles.mainTitle as React.CSSProperties}>
           {list.listTitle}
         </h4>
-        <Row style={{ width: "100%" }}>
+        <Row style={{ width: "100%" }} ref={drop}>
           {cards &&
-            cards.length &&
+            cards.length > 0 &&
             cards.map((card, index) => {
               return (
-                card.taskTag.toLowerCase() == list.listTitle.toLowerCase() && (
-                  <TrelloCard card={card} key={`${index}${card.taskTitle}`} />
+                card.taskTag.toLowerCase() === list.listTitle.toLowerCase() && (
+                  <TrelloCard
+                    // moveItem={moveItem}
+                    card={card}
+                    key={`${index}${card.taskTitle}`}
+                    index={index}
+                  />
                 )
               );
             })}
@@ -88,7 +81,8 @@ const mapStateToProps = (state: any) => {
 };
 const mapDispatchToProps = (dispatch: any) => {
   return {
-    updateCard: (card: ICard) => dispatch(updateCard(card)),
+    updateCard: (card: ICard, newStatus: string) =>
+      dispatch(updateCard(card, newStatus)),
     addList: (listTitle: string) => dispatch(addList(listTitle)),
     fetchCardItems: () => dispatch(fetchCardItems()),
   };

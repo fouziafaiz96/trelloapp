@@ -1,8 +1,6 @@
-import { TrelloCard } from "./TrelloCard";
 import {
   PageHeader,
   Button,
-  Space,
   Modal,
   Input,
   DatePicker,
@@ -13,11 +11,9 @@ import {
 } from "antd";
 import { PlusOutlined } from "@ant-design/icons";
 import { useEffect, useState } from "react";
-import { ActionProps, ICard, IList } from "../common/interfaces";
-import CheckableTag from "antd/lib/tag/CheckableTag";
+import { ICard, IList } from "../common/interfaces";
 import { connect } from "react-redux";
-import { Dispatch } from "redux";
-import { addCard, fetchCardItems } from "../actions/cardActions";
+import { addCard, updateCard } from "../actions/cardActions";
 import { addList, fetchListItems } from "../actions/listActions";
 import TrelloList from "./TrelloList";
 const { TextArea } = Input;
@@ -35,12 +31,14 @@ interface IProps {
     taskAssignee: string
   ) => void;
   fetchListItems: () => void;
+  updateCard: (card: ICard, newStatus: string) => void;
 }
 const TrelloBoard: React.FC<IProps> = ({
   addCard,
   listsData,
   addList,
   fetchListItems,
+  updateCard,
 }) => {
   const [listModal, setListModal] = useState(false);
   const [cardModal, setCardModal] = useState(false);
@@ -54,9 +52,7 @@ const TrelloBoard: React.FC<IProps> = ({
     taskDueDate: "",
     taskAssignee: "",
   });
-  const [listState, setListState] = useState<IList>({
-    listTitle: "",
-  });
+  const [listTitle, setListTitle] = useState<string>("");
   const tagsData = [
     {
       title: "Feature",
@@ -71,16 +67,28 @@ const TrelloBoard: React.FC<IProps> = ({
       color: "red",
     },
   ];
+  const clearState = () => {
+    setListTitle("");
+    setState({
+      taskId: 0,
+      taskTitle: "",
+      taskDesc: "",
+      taskTag: "",
+      taskDueDate: "",
+      taskAssignee: "",
+    });
+  };
   const toggleListModal = () => {
-    setListState({ listTitle: "" });
+    clearState();
     setListModal(!listModal);
   };
   const toggleCardModal = () => {
+    clearState();
     setCardModal(!cardModal);
   };
 
   const handleListSubmit = () => {
-    addList(listState.listTitle);
+    addList(listTitle);
     toggleListModal();
   };
   const handleCardChange = (
@@ -116,6 +124,9 @@ const TrelloBoard: React.FC<IProps> = ({
     padding: "8px 0",
   };
 
+  const onDrop = (item: ICard, monitor: any, status: string) => {
+    updateCard(item, status);
+  };
   return (
     <>
       <div className="site-page-header-ghost-wrapper">
@@ -147,6 +158,9 @@ const TrelloBoard: React.FC<IProps> = ({
         {lists.map((list, index) => {
           return (
             <Col
+              order={
+                list.listTitle === "bug" ? 1 : list.listTitle == "task" ? 2 : 3
+              }
               key={`${index}${list}`}
               xs={{ span: 8 }}
               sm={{ span: 8 }}
@@ -156,7 +170,7 @@ const TrelloBoard: React.FC<IProps> = ({
               className="gutter-row"
             >
               <div style={style}>
-                <TrelloList list={list} />
+                <TrelloList list={list} onDrop={onDrop} />
               </div>
             </Col>
           );
@@ -170,6 +184,7 @@ const TrelloBoard: React.FC<IProps> = ({
         onCancel={toggleCardModal}
       >
         <Input
+          value={state.taskTitle}
           size="large"
           placeholder="Task Title"
           name="taskTitle"
@@ -178,6 +193,7 @@ const TrelloBoard: React.FC<IProps> = ({
         <br />
         <br />
         <TextArea
+          value={state.taskDesc}
           rows={4}
           placeholder="Task Description"
           name="taskDesc"
@@ -193,6 +209,7 @@ const TrelloBoard: React.FC<IProps> = ({
         <br />
         <br />
         <Select
+          value={state.taskAssignee}
           defaultValue="select"
           style={{ width: "100%" }}
           onChange={(event) => setState({ ...state, taskAssignee: event })}
@@ -231,10 +248,9 @@ const TrelloBoard: React.FC<IProps> = ({
         <Input
           size="large"
           placeholder="List Title"
+          value={listTitle}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setListState({
-              listTitle: e.target.value,
-            })
+            setListTitle(e.target.value)
           }
         />
         <br />
@@ -264,6 +280,8 @@ const mapDispatchToProps = (dispatch: any) => {
       dispatch(
         addCard(taskId, taskTitle, taskDesc, taskTag, taskDueDate, taskAssignee)
       ),
+    updateCard: (card: ICard, newStatus: string) =>
+      dispatch(updateCard(card, newStatus)),
     fetchListItems: () => dispatch(fetchListItems()),
   };
 };
